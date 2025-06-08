@@ -1,0 +1,5 @@
+Flask==2.3.3
+pandas==2.2.2
+joblib==1.4.2
+mysql-connector-python==8.4.0
+Werkzeug==2.3.7

@@ -1,0 +1,292 @@
+/* Import Font Modern dari Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+/* --- Variabel CSS (Custom Properties) untuk Tema yang Konsisten --- */
+:root {
+    /* Palet Warna */
+    --color-primary: #379683;       /* Indigo sebagai warna utama/akselerasi */
+    --color-primary-dark: #a8e6cf;
+    --color-text: #374151;           /* Abu-abu tua untuk teks agar nyaman dibaca */
+    --color-text-light: #6b7280;
+    --color-background: #f8fafc;     /* Latar belakang off-white yang bersih */
+    --color-surface: #ffffff;        /* Warna untuk card, form, dll. */
+    --color-border: #e5e7eb;
+    --color-success: #10b981;
+
+    /* Tipografi */
+    --font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+    /* Properti Lainnya */
+    --border-radius: 12px;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transisi yang lebih smooth */
+}
+
+/* --- Reset & Gaya Dasar --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family-base);
+    background-color: var(--color-background);
+    color: var(--color-text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased; /* Teks lebih halus di Chrome/Safari */
+    -moz-osx-font-smoothing: grayscale; /* Teks lebih halus di Firefox */
+}
+
+/* --- Container --- */
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+/* --- Navbar (Modern & Sticky) --- */
+.navbar {
+    background-color: rgba(255, 255, 255, 0.8); /* Background semi-transparan */
+    backdrop-filter: blur(10px); /* Efek glassmorphism modern */
+    padding: 15px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    position: sticky; /* Tetap di atas saat di-scroll */
+    top: 0;
+    z-index: 1000;
+}
+
+/* Penyesuaian agar link ada di dalam container */
+.navbar .container {
+    padding-top: 0;
+    padding-bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar .logo {
+    font-weight: bold;
+    font-size: 1.5rem;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.navbar .nav-links a {
+    color: var(--color-text-light);
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 25px;
+    padding: 8px 0;
+    position: relative;
+    transition: var(--transition-base);
+}
+
+.navbar .nav-links a:hover {
+    color: var(--color-primary);
+}
+
+/* Garis bawah saat hover */
+.navbar .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--color-primary);
+    transform: scaleX(0);
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+}
+
+.navbar .nav-links a:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+}
+
+/* --- Headers --- */
+h1, h2, h3 {
+    color: var(--color-text);
+    margin-bottom: 20px;
+    line-height: 1.3;
+}
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+
+/* --- Buttons --- */
+button, .btn {
+    background-color: var(--color-primary);
+    color: #ffffff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition-base);
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: var(--shadow-sm);
+}
+
+button:hover, .btn:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-2px); /* Efek 'mengangkat' saat di-hover */
+    box-shadow: var(--shadow-md);
+}
+
+button:active, .btn:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+/* --- Forms --- */
+form {
+    background-color: var(--color-surface);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="email"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    transition: var(--transition-base);
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-size: 1rem;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); /* Efek glow saat fokus */
+}
+
+/* --- Table --- */
+.table-container {
+    overflow-x: auto; /* Agar bisa scroll horizontal di mobile */
+    background-color: var(--color-surface);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+}
+
+thead {
+    background-color: var(--color-background);
+}
+
+th {
+    color: var(--color-text-light);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background-color: #f8fafc; /* Warna sedikit berbeda saat hover */
+}
+
+/* --- Card --- */
+.card {
+    background-color: var(--color-surface);
+    padding: 25px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 20px;
+    transition: var(--transition-base);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* --- Footer --- */
+.footer {
+    text-align: center;
+    padding: 40px 15px;
+    margin-top: 30px;
+    color: var(--color-text-light);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--color-border);
+}
+
+/* --- Desain Responsif --- */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+    }
+
+    .navbar .container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .navbar .nav-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .navbar .nav-links a {
+        margin-left: 0;
+    }
+
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.75rem; }
+}
+
+/* Card Risk Levels */
+.low-risk {
+    background-color: #b2f2bb; /* hijau pastel terang */
+    color: #225c4e;
+}
+
+.moderate-risk {
+    background-color: #fff3bf; /* kuning pastel */
+    color: #5f4c06;
+}
+
+.high-risk {
+    background-color: #ffa8a8; /* merah pastel */
+    color: #6b0505;
+}

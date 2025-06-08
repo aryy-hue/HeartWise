@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Hasil Diagnosis</h2>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3>Data Pasien</h3>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Usia:</strong> {{ result.patient_data['Age'] }} tahun</li>
+                <li class="list-group-item"><strong>Jenis Kelamin:</strong> {{ 'Laki-laki' if result.patient_data['Gender'] == 1 else 'Perempuan' }}</li>
+                <li class="list-group-item"><strong>Detak Jantung:</strong> {{ result.patient_data['Heart rate'] }} bpm</li>
+                <li class="list-group-item"><strong>Tekanan Darah Sistolik:</strong> {{ result.patient_data['Systolic blood pressure'] }} mmHg</li>
+                <li class="list-group-item"><strong>Tekanan Darah Diastolik:</strong> {{ result.patient_data['Diastolic blood pressure'] }} mmHg</li>
+                <li class="list-group-item"><strong>Kadar Gula Darah:</strong> {{ result.patient_data['Blood sugar'] }} mg/dL</li>
+                <li class="list-group-item"><strong>CK-MB:</strong> {{ result.patient_data['CK-MB'] }} U/L</li>
+                <li class="list-group-item"><strong>Troponin:</strong> {{ result.patient_data['Troponin'] }} ng/mL</li>
+                <li class="list-group-item"><strong>Riwayat:</strong> {{ result.patient_data['Result'] }}</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card mb-4 
+        {% if result.risk_level == 'Low Risk' %} low-risk 
+        {% elif result.risk_level == 'Moderate Risk' %} moderate-risk 
+        {% else %} high-risk {% endif %}">
+        <div class="card-header">
+            Tingkat Risiko: {{ result.risk_level }}
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Rekomendasi:</h5>
+            <p class="card-text">{{ result.recommendation }}</p>
+        </div>
+    </div>
+
+
+    <div class="text-center">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Kembali ke Home</a>
+    </div>
+</div>
+{% endblock %}
