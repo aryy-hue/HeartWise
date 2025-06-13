@@ -1,0 +1,12 @@
+# Git
+.git
+.gitignore
+
+# Python virtual environment
+venv/
+.venv/
+__pycache__/
+
+# Docker
+.dockerignore
+Dockerfile
