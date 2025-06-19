@@ -18,6 +18,7 @@ from weasyprint import HTML, CSS
 from google.cloud import storage
 from datetime import datetime
 import pytz
+import os
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -306,4 +307,5 @@ def download_pdf(diagnosis_id):
 
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
     app.run(debug=True)
