@@ -1,10 +1,20 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+    flash,
+    Response,
+)
 import pandas as pd
 from joblib import load
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 from config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, SECRET_KEY
-from weasyprint import HTML
+from config import GCS_KEYFILE_PATH, GCS_BUCKET_NAME
+from weasyprint import HTML, CSS
 from google.cloud import storage
 from datetime import datetime
 import pytz
@@ -13,11 +23,18 @@ app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
 try:
-    storage_client = storage.Client()
-    # GANTI DENGAN NAMA BUCKET ANDA
-    GCS_BUCKET_NAME = "medicalhealth-106-135"
+    # Cek: Apakah pemilik memberikan lokasi kunci rahasia?
+    if GCS_KEYFILE_PATH:
+        # Jika YA, gunakan kunci dari lokasi tersebut.
+        storage_client = storage.Client.from_service_account_json(GCS_KEYFILE_PATH)
+        print("Info: Terhubung ke GCS menggunakan file kunci.")
+    else:
+        # Jika TIDAK, coba saja masuk (mungkin ada cara lain seperti 'gcloud login')
+        storage_client = storage.Client()
+        print("Peringatan: Tidak ada file kunci, mencoba koneksi default.")
+
 except Exception as e:
-    print(f"Peringatan: Gagal menginisialisasi Google Cloud Storage client: {e}")
+    print(f"KRITIS: Gagal total terhubung ke Google Cloud Storage: {e}")
     storage_client = None
 
 # Load model
@@ -116,7 +133,7 @@ def predict():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    # 1. Ambil dan susun data dari form
+    # 1. Ambil data dari form (kode ini sudah benar)
     data = {
         "Age": float(request.form["age"]),
         "Gender": 1 if request.form["gender"] == "male" else 0,
@@ -129,7 +146,7 @@ def predict():
         "Result": request.form["result"],
     }
 
-    # 2. Lakukan prediksi dengan model
+    # 2. Lakukan prediksi (kode ini sudah benar)
     df = pd.DataFrame([data])
     features = [
         "Age",
@@ -144,11 +161,10 @@ def predict():
     X = df[features]
     X_scaled = scaler.transform(X)
     cluster = kmeans.predict(X_scaled)[0]
-
     risk_level = risk_labels.get(cluster, "Unknown")
     recommendation = recommendations.get(cluster, "Konsultasi dokter umum diperlukan.")
 
-    # 3. Simpan ke database dan dapatkan ID nya
+    # 3. Simpan ke database (kode ini sudah benar)
     diagnosis_id = None
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -176,7 +192,7 @@ def predict():
             ),
         )
         conn.commit()
-        diagnosis_id = cursor.lastrowid  # Ambil ID baris yang baru saja dimasukkan
+        diagnosis_id = cursor.lastrowid
     except Exception as e:
         print(f"Error saat menyimpan ke DB: {e}")
         conn.rollback()
@@ -184,7 +200,7 @@ def predict():
         cursor.close()
         conn.close()
 
-    # Siapkan data untuk ditampilkan dan dikirim ke template PDF
+    # Siapkan data untuk ditampilkan
     result = {
         "patient_data": data,
         "cluster": int(cluster),
@@ -192,7 +208,11 @@ def predict():
         "recommendation": recommendation,
     }
 
-    # 4. Proses pembuatan PDF dan upload ke GCS (di latar belakang)
+    # --- PERUBAHAN UTAMA ADA DI SINI ---
+    gcs_upload_success = False
+    pdf_public_url = None
+
+    # 4. Proses pembuatan PDF dan upload ke GCS
     if diagnosis_id and storage_client:
         try:
             wib = pytz.timezone("Asia/Jakarta")
@@ -204,9 +224,7 @@ def predict():
                 diagnosis_id=diagnosis_id,
                 generation_time=generation_time,
             )
-
             pdf_bytes = HTML(string=html_string).write_pdf()
-
             destination_blob_name = (
                 f"laporan-diagnosis/diagnosis-report-{diagnosis_id}.pdf"
             )
@@ -215,64 +233,76 @@ def predict():
             blob = bucket.blob(destination_blob_name)
             blob.upload_from_string(pdf_bytes, content_type="application/pdf")
 
-            flash(
-                f"Laporan diagnosis (ID: {diagnosis_id}) berhasil diarsipkan.",
-                "success",
-            )
+            # Jadikan file bisa diakses publik dan dapatkan URL-nya
+            blob.make_public()
+            pdf_public_url = blob.public_url
+            gcs_upload_success = True
 
         except Exception as e:
             print(f"Error saat membuat/mengunggah PDF untuk ID {diagnosis_id}: {e}")
-            flash(f"Gagal mengarsipkan laporan PDF (ID: {diagnosis_id}).", "danger")
+            gcs_upload_success = False
 
-    # 5. Tampilkan halaman result.html ke pengguna (ini harus jadi baris terakhir)
-    return render_template("result.html", result=result)
-
-
-# Admin routes
-
-
-@app.route("/admin")
-def admin_dashboard():
-    if not session.get("is_admin"):
-        return redirect(url_for("index"))
-    return render_template("admin_dashboard.html")
-
-
-@app.route("/admin/users")
-def admin_users():
-    if not session.get("is_admin"):
-        return redirect(url_for("index"))
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id, username, is_admin FROM user")
-    users = cursor.fetchall()
-    cursor.close()
-    conn.close()
-
-    return render_template("admin_users.html", users=users)
-
-
-@app.route("/admin/diagnosis")
-def admin_diagnosis():
-    if not session.get("is_admin"):
-        return redirect(url_for("index"))
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        """
-        SELECT diagnosis.*, user.username 
-        FROM diagnosis 
-        JOIN user ON diagnosis.user_id = user.id 
-        ORDER BY diagnosis.created_at DESC
-    """
+    # 5. Tampilkan halaman result.html dengan data tambahan untuk tombol dan pop-up
+    return render_template(
+        "result.html",
+        result=result,
+        diagnosis_id=diagnosis_id,
+        gcs_upload_success=gcs_upload_success,
+        pdf_url=pdf_public_url,
     )
-    diagnoses = cursor.fetchall()
-    cursor.close()
+
+
+@app.route("/download_pdf/<int:diagnosis_id>")
+def download_pdf(diagnosis_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    # 1. Ambil data diagnosis dari database
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM diagnosis WHERE id = %s", (diagnosis_id,))
+    diagnosis = cursor.fetchone()
     conn.close()
 
-    return render_template("admin_diagnosis.html", diagnoses=diagnoses)
+    if not diagnosis:
+        return "Diagnosis tidak ditemukan!", 404
+
+    # 2. Susun kembali data seperti format 'result'
+    result = {
+        "patient_data": {
+            "Age": diagnosis["age"],
+            "Gender": diagnosis["gender"],
+            "Heart rate": diagnosis["heart_rate"],
+            "Systolic blood pressure": diagnosis["systolic_bp"],
+            "Diastolic blood pressure": diagnosis["diastolic_bp"],
+            "Blood sugar": diagnosis["blood_sugar"],
+            "CK-MB": diagnosis["ck_mb"],
+            "Troponin": diagnosis["troponin"],
+            "Result": diagnosis["result"],
+        },
+        "risk_level": diagnosis["risk_level"],
+        "recommendation": diagnosis["recommendation"],
+    }
+
+    # 3. Render template PDF dan generate PDF
+    wib = pytz.timezone("Asia/Jakarta")
+    generation_time = datetime.now(wib).strftime("%d %B %Y, %H:%M:%S WIB")
+    html_string = render_template(
+        "result_pdf.html",
+        result=result,
+        diagnosis_id=diagnosis_id,
+        generation_time=generation_time,
+    )
+    pdf_bytes = HTML(string=html_string).write_pdf()
+
+    # 4. Kirim file ke browser sebagai download
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={
+            "Content-disposition": f"attachment; filename=diagnosis-report-{diagnosis_id}.pdf"
+        },
+    )
 
 
 if __name__ == "__main__":

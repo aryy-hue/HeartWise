@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan Diagnosis - ID {{ diagnosis_id }}</title>
+    <style>
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+        }
+        .container {
+            width: 90%;
+            margin: auto;
+        }
+        h1 {
+            text-align: center;
+            color: #444;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .header-info {
+            text-align: right;
+            font-size: 0.9em;
+            color: #777;
+        }
+        .section {
+            margin-top: 30px;
+        }
+        .section h2 {
+            background-color: #f2f2f2;
+            padding: 10px;
+            border-left: 5px solid #007bff;
+            font-size: 1.2em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #fafafa;
+            width: 40%;
+        }
+        .risk-box {
+            border: 2px solid;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        .risk-box.low-risk { border-color: #28a745; background-color: #e9f7ea; }
+        .risk-box.moderate-risk { border-color: #ffc107; background-color: #fff8e1; }
+        .risk-box.high-risk { border-color: #dc3545; background-color: #fbe_aeb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Laporan Diagnosis Jantung</h1>
+        <div class="header-info">
+            <strong>ID Diagnosis:</strong> {{ diagnosis_id }}<br>
+            <strong>Waktu Dibuat:</strong> {{ generation_time }}
+        </div>
+
+        <div class="section">
+            <h2>Data Pasien</h2>
+            <table>
+                <tr><th>Usia</th><td>{{ result.patient_data['Age'] }} tahun</td></tr>
+                <tr><th>Jenis Kelamin</th><td>{{ 'Laki-laki' if result.patient_data['Gender'] == 1 else 'Perempuan' }}</td></tr>
+                <tr><th>Detak Jantung</th><td>{{ result.patient_data['Heart rate'] }} bpm</td></tr>
+                <tr><th>Tekanan Darah Sistolik</th><td>{{ result.patient_data['Systolic blood pressure'] }} mmHg</td></tr>
+                <tr><th>Tekanan Darah Diastolik</th><td>{{ result.patient_data['Diastolic blood pressure'] }} mmHg</td></tr>
+                <tr><th>Kadar Gula Darah</th><td>{{ result.patient_data['Blood sugar'] }} mg/dL</td></tr>
+                <tr><th>CK-MB</th><td>{{ result.patient_data['CK-MB'] }} U/L</td></tr>
+                <tr><th>Troponin</th><td>{{ result.patient_data['Troponin'] }} ng/mL</td></tr>
+                <tr><th>Riwayat</th><td>{{ result.patient_data['Result'] }}</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Hasil Analisis</h2>
+            <div class="risk-box 
+                {% if result.risk_level == 'Low Risk' %}low-risk
+                {% elif result.risk_level == 'Moderate Risk' %}moderate-risk
+                {% else %}high-risk{% endif %}">
+                <strong>Tingkat Risiko: {{ result.risk_level }}</strong>
+                <hr>
+                <p><strong>Rekomendasi:</strong><br>{{ result.recommendation }}</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
